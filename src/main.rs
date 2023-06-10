@@ -2,8 +2,8 @@ extern crate pretty_env_logger;
 #[macro_use] extern crate log;
 
 use rand::Rng;
-use windows::Win32::UI::WindowsAndMessaging::{SHOW_WINDOW_CMD, EnumWindows, GetWindowRect, GetClassNameA, SetWindowPos, ShowWindow, SET_WINDOW_POS_FLAGS, IsWindowVisible, GetWindowLongA, WINDOW_LONG_PTR_INDEX};
-use windows::Win32::Foundation::{LPARAM, HWND, BOOL, RECT};
+use windows::Win32::UI::WindowsAndMessaging::{SHOW_WINDOW_CMD, EnumWindows, GetWindowRect, GetCursorPos, GetClassNameA, SetCursorPos, SetWindowPos, ShowWindow, SET_WINDOW_POS_FLAGS, IsWindowVisible, GetWindowLongA, WINDOW_LONG_PTR_INDEX};
+use windows::Win32::Foundation::{LPARAM, HWND, BOOL, RECT, POINT};
 
 unsafe extern "system" fn callback(handle: HWND, _: LPARAM) -> BOOL {
 
@@ -18,15 +18,15 @@ unsafe extern "system" fn callback(handle: HWND, _: LPARAM) -> BOOL {
 	// unsafe { buffer.set_len(amount as usize); }
 	// let username = String::from_utf8(buffer).unwrap();
 
-	let mut buffer = [0 as u8; 100];
-	GetClassNameA(handle, &mut buffer);
-	let name = String::from_utf8(buffer.to_vec()).unwrap();
-	
+	// let mut buffer = [0 as u8; 100];
+	// GetClassNameA(handle, &mut buffer);
+	// let name = String::from_utf8(buffer.to_vec()).unwrap();
+
 	let mut rng = rand::thread_rng();
 
 	let style = GetWindowLongA(handle, WINDOW_LONG_PTR_INDEX(-16));
 	if (style & 0x00000000 == 0) && ((style & 0x00800000 == 0x00800000) || (style & 0x00C00000 == 0x00C00000)) {
-		info!("Window handle: {}", name);
+		// info!("Window handle: {}", name);
 		if IsWindowVisible(handle).into() {
 			ShowWindow(handle, SHOW_WINDOW_CMD(4));
 		}
@@ -44,11 +44,18 @@ fn main() {
 
 	pretty_env_logger::init();
 	
+	let mut rng = rand::thread_rng();
+
 	loop {
 		unsafe {
 
 			EnumWindows(Some(callback), LPARAM(0));
-			// std::thread::sleep(std::time::Duration::from_millis(10));
+
+			let mut pos = POINT::default();
+			GetCursorPos(&mut pos);
+			SetCursorPos(pos.x+rng.gen_range(-10..10), pos.y+rng.gen_range(-10..10));
+
+			// std::thread::sleep(std::time::Duration::from_millis(1));
 
 		}
 	}
