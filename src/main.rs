@@ -1,9 +1,8 @@
-extern crate pretty_env_logger;
-#[macro_use] extern crate log;
-
 use rand::Rng;
-use windows::Win32::UI::WindowsAndMessaging::{SHOW_WINDOW_CMD, EnumWindows, GetWindowRect, GetCursorPos, GetClassNameA, SetCursorPos, SetWindowPos, ShowWindow, SET_WINDOW_POS_FLAGS, IsWindowVisible, GetWindowLongA, WINDOW_LONG_PTR_INDEX};
+use windows::Win32::UI::WindowsAndMessaging::{SHOW_WINDOW_CMD, EnumWindows, GetWindowRect, GetCursorPos, SetCursorPos, SetWindowPos, ShowWindow, SET_WINDOW_POS_FLAGS, IsWindowVisible, GetWindowLongA, WINDOW_LONG_PTR_INDEX};
 use windows::Win32::Foundation::{LPARAM, HWND, BOOL, RECT, POINT};
+
+static start_time: once_cell::sync::Lazy<std::time::Instant> = once_cell::sync::Lazy::new(|| std::time::Instant::now());
 
 unsafe extern "system" fn callback(handle: HWND, _: LPARAM) -> BOOL {
 
@@ -23,6 +22,7 @@ unsafe extern "system" fn callback(handle: HWND, _: LPARAM) -> BOOL {
 	// let name = String::from_utf8(buffer.to_vec()).unwrap();
 
 	let mut rng = rand::thread_rng();
+	let window_range: i32 = (20.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32;
 
 	let style = GetWindowLongA(handle, WINDOW_LONG_PTR_INDEX(-16));
 	if (style & 0x00000000 == 0) && ((style & 0x00800000 == 0x00800000) || (style & 0x00C00000 == 0x00C00000)) {
@@ -34,15 +34,16 @@ unsafe extern "system" fn callback(handle: HWND, _: LPARAM) -> BOOL {
 		let mut r = RECT::default();
 		GetWindowRect(handle, &mut r);
 
-		SetWindowPos(handle, None, r.left+rng.gen_range(-20..20), r.top+rng.gen_range(-5..5), 5, 5, SET_WINDOW_POS_FLAGS(1));
+		// info!("{}, {}", rng.gen_range(-window_range..window_range), window_range);
+
+		SetWindowPos(handle, None, r.left+rng.gen_range(-window_range..=window_range), r.top+rng.gen_range(-window_range..=window_range), 5, 5, SET_WINDOW_POS_FLAGS(1));
 	}
 
 	return BOOL(true as i32);
+	
 }
 
 fn main() {
-
-	pretty_env_logger::init();
 	
 	let mut rng = rand::thread_rng();
 
@@ -53,7 +54,10 @@ fn main() {
 
 			let mut pos = POINT::default();
 			GetCursorPos(&mut pos);
-			SetCursorPos(pos.x+rng.gen_range(-10..10), pos.y+rng.gen_range(-10..10));
+
+			let cursor_range: i32 = (10.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32;
+
+			SetCursorPos(pos.x+rng.gen_range(-cursor_range..=cursor_range), pos.y+rng.gen_range(-cursor_range..=cursor_range));
 
 			// std::thread::sleep(std::time::Duration::from_millis(1));
 
