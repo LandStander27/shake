@@ -22,7 +22,7 @@ unsafe extern "system" fn callback(handle: HWND, _: LPARAM) -> BOOL {
 	// let name = String::from_utf8(buffer.to_vec()).unwrap();
 
 	let mut rng = rand::thread_rng();
-	let window_range: i32 = (20.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32;
+	let window_range: i32 = ((20.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32).min(20);
 
 	let style = GetWindowLongA(handle, WINDOW_LONG_PTR_INDEX(-16));
 	if (style & 0x00000000 == 0) && ((style & 0x00800000 == 0x00800000) || (style & 0x00C00000 == 0x00C00000)) {
@@ -55,7 +55,7 @@ fn main() {
 			let mut pos = POINT::default();
 			GetCursorPos(&mut pos);
 
-			let cursor_range: i32 = (10.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32;
+			let cursor_range: i32 = ((10.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32).min(10);
 
 			SetCursorPos(pos.x+rng.gen_range(-cursor_range..=cursor_range), pos.y+rng.gen_range(-cursor_range..=cursor_range));
 
