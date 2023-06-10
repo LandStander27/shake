@@ -47,22 +47,40 @@ fn main() {
 	
 	let mut rng = rand::thread_rng();
 
-	loop {
-		unsafe {
+	unsafe {
+
+		let mut old_point = POINT::default();
+		GetCursorPos(&mut old_point);
+
+		loop {
+
+			let mut new_point = POINT::default();
+			GetCursorPos(&mut new_point);
+
+			let x_offset = new_point.x - old_point.x;
+			let y_offset = new_point.y - old_point.y;
+
+			new_point.x = old_point.x + -x_offset;
+			new_point.y = old_point.y + -y_offset;
+
+			SetCursorPos(new_point.x, new_point.y);
+			
+			old_point = new_point.clone();
 
 			EnumWindows(Some(callback), LPARAM(0));
 
 			let mut pos = POINT::default();
 			GetCursorPos(&mut pos);
 
-			let cursor_range: i32 = ((10.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32).min(10);
-
+			let cursor_range: i32 = ((50.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32).min(50);
 			SetCursorPos(pos.x+rng.gen_range(-cursor_range..=cursor_range), pos.y+rng.gen_range(-cursor_range..=cursor_range));
 
-			// std::thread::sleep(std::time::Duration::from_millis(1));
+			std::thread::sleep(std::time::Duration::from_millis(1));
 
 		}
 	}
+
+
 
 
 }
