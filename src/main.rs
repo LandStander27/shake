@@ -1,7 +1,11 @@
+#![allow(non_upper_case_globals)]
+
 use rand::Rng;
 use windows::Win32::UI::WindowsAndMessaging::{GetMessageA, TranslateMessage, DispatchMessageA, MSG, SHOW_WINDOW_CMD, EnumWindows, WINDOWS_HOOK_ID, CallNextHookEx, SetWindowsHookExA, GetWindowRect, GetCursorPos, SetCursorPos, SetWindowPos, ShowWindow, SET_WINDOW_POS_FLAGS, IsWindowVisible, GetWindowLongA, WINDOW_LONG_PTR_INDEX};
 use windows::Win32::Foundation::{LPARAM, HWND, BOOL, RECT, POINT, WPARAM, LRESULT, GetLastError};
+use windows::core::PCSTR;
 use windows::Win32::Graphics::Gdi::{MonitorFromPoint, MONITOR_FROM_FLAGS};
+use windows::Win32::Media::Audio::{PlaySoundA, SND_FLAGS};
 
 static start_time: once_cell::sync::Lazy<std::time::Instant> = once_cell::sync::Lazy::new(|| std::time::Instant::now());
 
@@ -138,13 +142,23 @@ fn log_error() {
 	}
 }
 
+fn beep() {
+
+	unsafe {
+		PlaySoundA(PCSTR("DeviceDisconnect".as_bytes().as_ptr()), None, SND_FLAGS(65536) | SND_FLAGS(1));
+	}
+}
+
 fn main() {
+
+	let mut last_beep = std::time::Instant::now();
+	beep();
 
 	unsafe {
 
 		set_hook();
 
-		let thread = std::thread::spawn(|| {
+		let thread = std::thread::spawn(move || {
 
 			let mut rng = rand::thread_rng();
 	
@@ -156,8 +170,13 @@ fn main() {
 	
 				let cursor_range: i32 = ((50.0*start_time.elapsed().as_secs_f64()/100.0).ceil() as i32).min(50);
 				SetCursorPos(pos.x+rng.gen_range(-cursor_range..=cursor_range), pos.y+rng.gen_range(-cursor_range..=cursor_range));
-	
+
 				log_error();
+
+				if last_beep.elapsed().as_secs_f32() > 1.0 && rng.gen_ratio(1, 25) {
+					beep();
+					last_beep = std::time::Instant::now();
+				}
 
 				std::thread::sleep(std::time::Duration::from_millis(1));
 			}
