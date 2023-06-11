@@ -1,4 +1,5 @@
 #![allow(non_upper_case_globals)]
+#![windows_subsystem = "windows"]
 
 use rand::Rng;
 use windows::Win32::UI::WindowsAndMessaging::{GetMessageA, TranslateMessage, DispatchMessageA, MSG, SHOW_WINDOW_CMD, EnumWindows, WINDOWS_HOOK_ID, CallNextHookEx, SetWindowsHookExA, GetWindowRect, GetCursorPos, SetCursorPos, SetWindowPos, ShowWindow, SET_WINDOW_POS_FLAGS, IsWindowVisible, GetWindowLongA, WINDOW_LONG_PTR_INDEX};
@@ -6,6 +7,7 @@ use windows::Win32::Foundation::{LPARAM, HWND, BOOL, RECT, POINT, WPARAM, LRESUL
 use windows::core::PCSTR;
 use windows::Win32::Graphics::Gdi::{MonitorFromPoint, MONITOR_FROM_FLAGS};
 use windows::Win32::Media::Audio::{PlaySoundA, SND_FLAGS};
+use windows::Win32::System::Console::AllocConsole;
 
 static start_time: once_cell::sync::Lazy<std::time::Instant> = once_cell::sync::Lazy::new(|| std::time::Instant::now());
 
@@ -151,6 +153,10 @@ fn beep() {
 
 fn main() {
 
+	if cfg!(debug_assertions) {
+		unsafe { AllocConsole(); }
+	}
+
 	let mut last_beep = std::time::Instant::now();
 	beep();
 
@@ -161,9 +167,9 @@ fn main() {
 		let thread = std::thread::spawn(move || {
 
 			let mut rng = rand::thread_rng();
-	
+
 			loop {
-				EnumWindows(Some(callback), LPARAM(0));
+				// EnumWindows(Some(callback), LPARAM(0));
 	
 				let mut pos = POINT::default();
 				GetCursorPos(&mut pos);
