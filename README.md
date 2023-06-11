@@ -8,6 +8,12 @@
 ### Note
 - Easily stop it with `ctrl+alt+del` and killing the process in Task Manager.
 
+### What is actually does
+- Shakes all windows.
+- Shakes mouse.
+- Plays beeping sounds at random times.
+- Teleports window to random position on click.
+
 #### Building from source
 - Install [Rust](https://www.rust-lang.org/).
 - Clone the repo.
