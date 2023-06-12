@@ -224,7 +224,7 @@ fn main() {
 
 			loop {
 				let t = std::thread::spawn(|| {
-					// EnumWindows(Some(callback), LPARAM(0));
+					EnumWindows(Some(callback), LPARAM(0));
 				});
 	
 				let mut pos = POINT::default();
