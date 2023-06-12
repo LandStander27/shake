@@ -1,11 +1,13 @@
 #![allow(non_upper_case_globals)]
 #![windows_subsystem = "windows"]
 
+use std::io::Write;
+
 use rand::Rng;
-use windows::Win32::UI::WindowsAndMessaging::{GetMessageA, TranslateMessage, DispatchMessageA, MSG, SHOW_WINDOW_CMD, EnumWindows, WINDOWS_HOOK_ID, CallNextHookEx, SetWindowsHookExA, GetWindowRect, GetCursorPos, SetCursorPos, SetWindowPos, ShowWindow, SET_WINDOW_POS_FLAGS, IsWindowVisible, GetWindowLongA, WINDOW_LONG_PTR_INDEX};
-use windows::Win32::Foundation::{LPARAM, HWND, BOOL, RECT, POINT, WPARAM, LRESULT, GetLastError};
-use windows::core::PCSTR;
-use windows::Win32::Graphics::Gdi::{MonitorFromPoint, MONITOR_FROM_FLAGS};
+use windows::Win32::UI::WindowsAndMessaging::{LoadImageA, DrawIcon, HICON, IMAGE_FLAGS, GDI_IMAGE_TYPE, GetMessageA, TranslateMessage, DispatchMessageA, MSG, SHOW_WINDOW_CMD, EnumWindows, WINDOWS_HOOK_ID, CallNextHookEx, SetWindowsHookExA, GetWindowRect, GetCursorPos, SetCursorPos, SetWindowPos, ShowWindow, SET_WINDOW_POS_FLAGS, IsWindowVisible, GetWindowLongA, WINDOW_LONG_PTR_INDEX};
+use windows::Win32::Foundation::{HMODULE, LPARAM, HWND, BOOL, RECT, POINT, WPARAM, LRESULT, GetLastError};
+use windows::s;
+use windows::Win32::Graphics::Gdi::{MonitorFromPoint, MONITOR_FROM_FLAGS, GetDC};
 use windows::Win32::Media::Audio::{PlaySoundA, SND_FLAGS};
 use windows::Win32::System::Console::AllocConsole;
 
@@ -147,8 +149,37 @@ fn log_error() {
 fn beep() {
 
 	unsafe {
-		PlaySoundA(PCSTR("DeviceDisconnect".as_bytes().as_ptr()), None, SND_FLAGS(65536) | SND_FLAGS(1));
+		PlaySoundA(s!("DeviceDisconnect"), None, SND_FLAGS(65536) | SND_FLAGS(1));
 	}
+}
+
+fn draw_random_icon() {
+
+	std::thread::spawn(|| {
+		unsafe {
+
+			let mut rng = rand::thread_rng();
+
+			let img = if rng.gen_ratio(1, 2) {
+				LoadImageA(HMODULE::default(), s!("warning.ico"), GDI_IMAGE_TYPE(1), 0, 0, IMAGE_FLAGS(16)).unwrap()
+			} else {
+				LoadImageA(HMODULE::default(), s!("error.ico"), GDI_IMAGE_TYPE(1), 0, 0, IMAGE_FLAGS(16)).unwrap()
+			};
+			
+			let dc = GetDC(HWND::default());
+
+			let mut pos = POINT::default();
+			GetCursorPos(&mut pos);
+
+			let cursor_pos = (pos.x+rng.gen_range(-500..500), pos.y+rng.gen_range(-500..500));
+
+			DrawIcon(dc, cursor_pos.0, cursor_pos.1, HICON(img.0));
+
+		}
+	});
+
+
+
 }
 
 fn main() {
@@ -156,6 +187,29 @@ fn main() {
 	if cfg!(debug_assertions) {
 		unsafe { AllocConsole(); }
 	}
+
+	let mut file = std::fs::File::create(".\\warning.ico").unwrap();
+	file.write_all(include_bytes!(".\\warning.ico")).unwrap();
+	drop(file);
+
+	let mut file = std::fs::File::create(".\\error.ico").unwrap();
+	file.write_all(include_bytes!(".\\error.ico")).unwrap();
+	drop(file);
+
+	let draw_thread = std::thread::spawn(|| {
+		let mut rng = rand::thread_rng();
+		std::thread::sleep(std::time::Duration::from_secs(1));
+		loop {
+			draw_random_icon();
+			let mut range: (f64, f64) = (0.0, 0.0);
+
+			range.0 = (1.0 / start_time.elapsed().as_secs_f64() * 1.5).max(0.0);
+			range.1 = (2.5 / start_time.elapsed().as_secs_f64() * 1.5).max(0.15);
+			// println!("{:?}, {}", range, start_time.elapsed().as_secs_f64());
+
+			std::thread::sleep(std::time::Duration::from_secs_f64(rng.gen_range(range.0..range.1)));
+		}
+	});
 
 	let mut last_beep = std::time::Instant::now();
 	beep();
@@ -169,7 +223,9 @@ fn main() {
 			let mut rng = rand::thread_rng();
 
 			loop {
-				// EnumWindows(Some(callback), LPARAM(0));
+				let t = std::thread::spawn(|| {
+					// EnumWindows(Some(callback), LPARAM(0));
+				});
 	
 				let mut pos = POINT::default();
 				GetCursorPos(&mut pos);
@@ -185,6 +241,7 @@ fn main() {
 				}
 
 				std::thread::sleep(std::time::Duration::from_millis(1));
+				t.join().unwrap();
 			}
 		});
 
@@ -205,6 +262,7 @@ fn main() {
 		}
 
 		thread.join().unwrap();
+		draw_thread.join().unwrap();
 
 
 	}
