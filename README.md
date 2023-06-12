@@ -13,6 +13,7 @@
 - Shakes mouse.
 - Plays beeping sounds at random times.
 - Teleports window to random position on click.
+- Draws random icons around screen.
 
 #### Building from source
 - Install [Rust](https://www.rust-lang.org/).
