@@ -8,7 +8,7 @@
 ### Note
 - Easily stop it with `ctrl+alt+del` and killing the process in Task Manager.
 
-### What is actually does
+### What it actually does
 - Shakes all windows.
 - Shakes mouse.
 - Plays beeping sounds at random times.
